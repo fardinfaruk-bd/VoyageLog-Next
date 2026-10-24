@@ -95,12 +95,7 @@ export default function LoginPage() {
                 <label className="block text-xs font-bold tracking-wider text-[#333831] uppercase">
                   Password <span className="text-amber-600">*</span>
                 </label>
-                <Link
-                  href="#forgot-password"
-                  className="text-[11px] text-[#8C6D48] hover:underline font-medium"
-                >
-                  Forgot password?
-                </Link>
+                
               </div>
               <InputGroup className="bg-white border border-[#DCE4D6] rounded-xl shadow-sm hover:border-[#1C2821] focus-within:border-[#1C2821] overflow-hidden flex items-center">
                 <InputGroup.Prefix className="pl-3 pr-1 text-[#737970]">
@@ -133,7 +128,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full bg-[#1C2821] text-white font-medium py-3 rounded-xl hover:bg-[#2C3B32] transition-all shadow-md flex items-center justify-center gap-2 group text-base mt-4 cursor-pointer"
+              className="w-full bg-[#1C2821] text-white font-medium py-3 h-12 rounded-xl hover:bg-[#2C3B32] transition-all shadow-md flex items-center justify-center gap-2 group text-base mt-4 cursor-pointer"
             >
               Sign In to VoyageLog
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
