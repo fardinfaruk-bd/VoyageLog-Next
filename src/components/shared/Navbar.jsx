@@ -1,16 +1,36 @@
+"use client";
 import React from "react";
 import Link from "next/link";
-import { Button } from "@heroui/react";
+import { Avatar, Button, Dropdown, Spinner } from "@heroui/react";
 import { Compass, User } from "lucide-react";
 import NavbarClient from "./NavbarClient";
+import { signOut, useSession } from "@/lib/auth-client";
+import { Bars } from "@gravity-ui/icons";
+import NavLinks from "./NavLinks";
 
 export default function Navbar() {
+  const { data: session, isPending } = useSession();
+
+  const user = session?.user;
+  console.log(user);
+
+  const handleLogout = async () => {
+    await signOut();
+    router.refresh();
+  };
+  const navLinks = [
+    { label: "Home", href: "/" },
+    { label: "Features", href: "/features" },
+    { label: "How It Works", href: "/how-it-works" },
+    { label: "About", href: "/about" }
+  ];
+
+
   return (
     <header className="sticky top-0 z-50 bg-[#F4F7F2]/90 backdrop-blur-md border-b border-[#E2E8DC] px-4 sm:px-6 lg:px-12 py-3.5">
       <div className="max-w-7xl mx-auto flex items-center justify-between relative">
-        
         <div className="flex items-center gap-3">
-          <NavbarClient />
+          <NavbarClient user={user}/>
 
           <Link href="/" className="flex items-center gap-2.5 cursor-pointer">
             <div className="w-9 h-9 rounded-full bg-[#EAEFE6] border border-[#DCE4D6] flex items-center justify-center text-[#1C2821] shadow-sm">
@@ -22,40 +42,75 @@ export default function Navbar() {
           </Link>
         </div>
 
-        <nav className="hidden sm:flex items-center gap-8">
-          <Link href="#features" className="text-[#555B52] hover:text-[#1A1C19] font-medium text-sm transition-colors">
-            Features
-          </Link>
-          <Link href="#how-it-works" className="text-[#555B52] hover:text-[#1A1C19] font-medium text-sm transition-colors">
-            How It Works
-          </Link>
-          <Link href="#about" className="text-[#555B52] hover:text-[#1A1C19] font-medium text-sm transition-colors">
-            About
-          </Link>
-        </nav>
-
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link href="#login" className="hidden md:block text-[#1A1C19] font-medium text-sm hover:opacity-80 transition-opacity">
-            Log In
-          </Link>
-
-          <Link href="#get-started">
-            <Button 
-              className="bg-[#1C2821] text-white font-medium px-5 py-2.5 rounded-full hover:bg-[#2C3B32] transition-all shadow-sm text-sm"
-            >
-              Get Started
-            </Button>
-          </Link>
-
-          <Link 
-            href="#profile" 
-            className="w-10 h-10 rounded-full bg-[#1C2821] text-white flex items-center justify-center shadow-sm hover:bg-[#2C3B32] transition-colors"
-            aria-label="User Profile"
-          >
-            <User className="w-4 h-4 text-white" />
-          </Link>
+        <div className="hidden md:flex items-center gap-8">
+          {navLinks.map((link, index) => (
+            <NavLinks key={index} href={link.href}>
+              {link.label}
+            </NavLinks>
+          ))}
         </div>
 
+        {isPending ? (
+          <Spinner size="sm" color="primary" />
+        ) : user ? (
+          <div className="flex items-center gap-3">
+            <h1 className="hidden md:block font-semibold text-gray-500">
+              Hi! <strong className="text-gray-700">{user?.name}</strong>
+            </h1>
+            <Dropdown placement="bottom end">
+              <Dropdown.Trigger>
+                <Avatar>
+                  <Avatar.Image
+                    referrerPolicy="no-referrer"
+                    alt={user?.name}
+                    src={user?.image}
+                  />
+                  <Avatar.Fallback>{user?.name?.charAt(0)}</Avatar.Fallback>
+                </Avatar>
+              </Dropdown.Trigger>
+              <Dropdown.Popover>
+                <Dropdown.Menu aria-label="Profile Actions">
+                  <Dropdown.Item
+                    id="profile"
+                    textValue="Profile"
+                    className="p-0"
+                  >
+                    <Link
+                      href="/profile"
+                      className="flex w-full px-3 py-2 font-medium text-zinc-700 no-underline"
+                    >
+                      Profile
+                    </Link>
+                  </Dropdown.Item>
+                  <Dropdown.Item
+                    id="logout"
+                    color="danger"
+                    className="text-danger font-medium px-3 py-2"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown.Popover>
+            </Dropdown>
+          </div>
+        ) : (
+          <div className="hidden md:flex items-center gap-3">
+            <Link href="/login">
+              <Button
+                variant="secondary"
+                className="font-semibold rounded-xl shadow-sm border border-[#E2E8DC] text-[#1A1C19] hover:bg-[#E2E8DC] hover:text-[#1A1C19]"
+              >
+                Login
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button className="font-semibold rounded-xl bg-black">
+                Register
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </header>
   );

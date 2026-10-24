@@ -2,33 +2,69 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Input, InputGroup, Button, Checkbox, Separator } from "@heroui/react";
+import {
+  Input,
+  InputGroup,
+  Button,
+  Separator,
+  TextField,
+  Label,
+  Form,
+  FieldError,
+} from "@heroui/react";
 import { Mail, KeyRound, Eye, EyeOff, Lock, ArrowRight } from "lucide-react";
 import RegisterHeroBanner from "@/components/auth/RegisterHeroBanner";
 import { FcGoogle } from "react-icons/fc";
+import { signIn } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login submitted:", formData);
+    setIsLoading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+      const { data, error: authError } = await signIn.email({
+        email,
+        password,
+      });
+
+      if (authError) {
+        setError(authError.message || "Invalid email or password.");
+        return;
+      }
+
+      // --- Form Reset Logic on Success ---
+      setEmail("");
+      setPassword("");
+
+      setSuccess("Successfully signed in! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
     console.log("Google login initiated");
-  }
+  };
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-[#F4F7F2]">
@@ -69,11 +105,22 @@ export default function LoginPage() {
             Enter your credentials to open your private expedition records.
           </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-[#333831] uppercase mb-1.5">
+          <Form onSubmit={handleSubmit} className="space-y-5">
+            <TextField
+              isRequired
+              name="email"
+              type="email"
+              className="flex flex-col gap-1.5 w-full"
+              validate={(value) => {
+                if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
+                  return "Please enter a valid email address";
+                }
+                return null;
+              }}
+            >
+              <Label className="block text-xs font-bold tracking-wider text-[#333831] uppercase mb-1.5">
                 Email Address <span className="text-amber-600">*</span>
-              </label>
+              </Label>
               <InputGroup className="bg-white border border-[#DCE4D6] rounded-xl shadow-sm hover:border-[#1C2821] focus-within:border-[#1C2821] overflow-hidden flex items-center">
                 <InputGroup.Prefix className="pl-3 pr-1 text-[#737970]">
                   <Mail className="w-4 h-4" />
@@ -82,21 +129,30 @@ export default function LoginPage() {
                   type="email"
                   name="email"
                   placeholder="clara.danvers@voyagelog.com"
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
               </InputGroup>
-            </div>
+              <FieldError className="text-xs text-red-500 font-medium" />
+            </TextField>
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold tracking-wider text-[#333831] uppercase">
+            <TextField
+              isRequired
+              name="password"
+              className="flex flex-col gap-1.5 w-full"
+              validate={(value) => {
+                if (value.length < 8) {
+                  return "Password must be at least 8 characters long";
+                }
+                return null;
+              }}
+            >
+             <Label className="block text-xs font-bold tracking-wider text-[#333831] uppercase">
                   Password <span className="text-amber-600">*</span>
-                </label>
-                
-              </div>
+              </Label>
+              
               <InputGroup className="bg-white border border-[#DCE4D6] rounded-xl shadow-sm hover:border-[#1C2821] focus-within:border-[#1C2821] overflow-hidden flex items-center">
                 <InputGroup.Prefix className="pl-3 pr-1 text-[#737970]">
                   <KeyRound className="w-4 h-4" />
@@ -105,8 +161,8 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="••••••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
@@ -124,10 +180,25 @@ export default function LoginPage() {
                   </button>
                 </InputGroup.Suffix>
               </InputGroup>
-            </div>
+              <FieldError className="text-xs text-red-500 font-medium" />
+            </TextField>
+
+            {error && (
+              <div className="p-3 text-xs font-medium rounded-xl bg-red-100/60 dark:bg-red-950/50 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900">
+                <span className="font-semibold">Error:</span> {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="p-3 text-xs font-medium rounded-xl bg-emerald-100/60 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900">
+                <span className="font-semibold">Success:</span> {success}
+              </div>
+            )}
 
             <Button
               type="submit"
+              isLoading={isLoading}
+              isDisabled={isLoading}
               className="w-full bg-[#1C2821] text-white font-medium py-3 h-12 rounded-xl hover:bg-[#2C3B32] transition-all shadow-md flex items-center justify-center gap-2 group text-base mt-4 cursor-pointer"
             >
               Sign In to VoyageLog
@@ -144,7 +215,7 @@ export default function LoginPage() {
               <FcGoogle />
               Sign Up with Google
             </Button>
-          </form>
+          </Form>
 
           <div className="flex items-center justify-center gap-2 text-xs text-[#737970] mt-6">
             <Lock className="w-3.5 h-3.5 text-amber-700" />

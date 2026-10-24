@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input, InputGroup, Button } from "@heroui/react";
 import {
   User,
@@ -15,33 +16,90 @@ import {
 } from "lucide-react";
 import RegisterHeroBanner from "@/components/auth/RegisterHeroBanner";
 import { FcGoogle } from "react-icons/fc";
+import { signUp, signIn } from "@/lib/auth-client";
 
 export default function RegisterPage() {
+  const router = useRouter();
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Form State
-  const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    agreeToTerms: false,
-  });
+  // Individual Form States
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  // UI Feedback States
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // --- Password Security Level Calculation ---
+  const getPasswordStrength = (pass) => {
+    if (!pass) return { label: "Too weak", color: "text-red-600" };
+
+    let score = 0;
+    if (pass.length >= 8) score += 1;
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+    switch (score) {
+      case 1:
+        return { label: "Weak", color: "text-amber-700" };
+      case 2:
+        return { label: "Fair", color: "text-amber-600" };
+      case 3:
+        return { label: "Good", color: "text-emerald-600" };
+      case 4:
+        return { label: "Strong", color: "text-emerald-700" };
+      default:
+        return { label: "Too weak", color: "text-red-600" };
+    }
   };
 
-  const handleSubmit = (e) => {
+  const passwordStrength = getPasswordStrength(password);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Registration submitted:", formData);
+    setError("");
+    setSuccess("");
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const { data, error: authError } = await signUp.email({
+        email,
+        password,
+        name: fullName,
+      });
+
+      if (authError) {
+        setError(authError.message || "Failed to create account.");
+        return;
+      }
+
+      setSuccess("Account created successfully! Redirecting...");
+      setTimeout(() => {
+        router.push("/");
+      }, 1000);
+    } catch (err) {
+      setError(err.message || "An unexpected error occurred.");
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Google login initiated");
-  }
+  const handleGoogleLogin = async () => {
+    console.log("Google login Done")
+  };
 
   return (
     <div className="min-h-screen w-full grid grid-cols-1 lg:grid-cols-12 bg-[#F4F7F2]">
@@ -61,7 +119,7 @@ export default function RegisterPage() {
           <p className="text-[#555B52]">
             Already a member?{" "}
             <Link
-              href="#login"
+              href="/login"
               className="font-bold text-[#1A1C19] underline hover:text-[#1C2821] transition-colors"
             >
               Log In
@@ -95,8 +153,8 @@ export default function RegisterPage() {
                   type="text"
                   name="fullName"
                   placeholder="e.g. Clara Danvers"
-                  value={formData.fullName}
-                  onChange={handleChange}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
@@ -116,8 +174,8 @@ export default function RegisterPage() {
                   type="email"
                   name="email"
                   placeholder="clara.danvers@voyagelog.com"
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
@@ -142,8 +200,8 @@ export default function RegisterPage() {
                   type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="••••••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
@@ -161,9 +219,13 @@ export default function RegisterPage() {
                   </button>
                 </InputGroup.Suffix>
               </InputGroup>
-              <div className="flex items-center justify-between text-[11px] text-[#737970] mt-1 px-1">
+
+              {/* Dynamic Security Level Indicator (Text Only) */}
+              <div className="flex items-center justify-between text-[11px] text-[#737970] mt-1.5 px-1">
                 <span>Security level:</span>
-                <span className="text-amber-700 font-medium">Too weak</span>
+                <span className={`font-semibold ${passwordStrength.color}`}>
+                  {passwordStrength.label}
+                </span>
               </div>
             </div>
 
@@ -180,8 +242,8 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? "text" : "password"}
                   name="confirmPassword"
                   placeholder="••••••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="w-full py-2.5 px-2 text-sm focus:outline-none bg-transparent"
                 />
@@ -201,20 +263,37 @@ export default function RegisterPage() {
               </InputGroup>
             </div>
 
+            {/* Notification Messages */}
+            {error && (
+              <div className="p-3 text-xs font-medium rounded-xl bg-red-50 text-red-700 border border-red-200">
+                <span className="font-semibold">Error:</span> {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="p-3 text-xs font-medium rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200">
+                <span className="font-semibold">Success:</span> {success}
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
               className="w-full bg-[#1C2821] text-white font-medium py-3 rounded-xl hover:bg-[#2C3B32] transition-all shadow-md flex items-center justify-center gap-2 group text-base mt-4 cursor-pointer"
+              isLoading={isLoading}
+              isDisabled={isLoading}
             >
               Create Account
               <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Button>
+
+            {/* Google Sign Up Button */}
             <Button
-              variant="outline"
-              className="w-full font-semibold rounded-xl text-sm h-12 shadow-sm"
+              variant="bordered"
+              className="w-full font-semibold rounded-xl text-sm h-12 border-[#DCE4D6] bg-white text-[#1A1C19] hover:bg-[#EAEFE6] shadow-xs flex items-center justify-center gap-2 cursor-pointer"
               onClick={handleGoogleLogin}
             >
-              <FcGoogle />
+              <FcGoogle size={18} />
               Sign Up with Google
             </Button>
           </form>
