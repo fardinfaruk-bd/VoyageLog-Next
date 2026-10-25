@@ -15,12 +15,10 @@ export function DashboardSidebar() {
         setIsMounted(true);
     }, []);
 
-    // VoyageLog Navigation Items based on the reference image
     const navItems = [
-        { icon: LayoutGrid, label: "Overview", href: "/dashboard" },
-        { icon: BookOpen, label: "My Memories", href: "/dashboard/memories" },
-        { icon: Camera, label: "Add New Photo", href: "/dashboard/add-photo" },
-        { icon: Shield, label: "Security", href: "/dashboard/security" },
+        { icon: LayoutGrid, label: "Overview", href: "/dashboard/user" },
+        { icon: BookOpen, label: "My Memories", href: "/dashboard/user/memories" },
+        { icon: Camera, label: "Add New Photo", href: "/dashboard/user/add-photo" },
     ];
 
     const bottomNavItems = [

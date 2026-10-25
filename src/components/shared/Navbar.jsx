@@ -83,6 +83,18 @@ export default function Navbar() {
                     </Link>
                   </Dropdown.Item>
                   <Dropdown.Item
+                    id="Dashboard"
+                    textValue="Dashboard"
+                    className="p-0"
+                  >
+                    <Link
+                      href="/dashboard/user"
+                      className="flex w-full px-3 py-2 font-medium text-zinc-700 no-underline"
+                    >
+                      Dashboard
+                    </Link>
+                  </Dropdown.Item>
+                  <Dropdown.Item
                     id="logout"
                     color="danger"
                     className="text-danger font-medium px-3 py-2"
